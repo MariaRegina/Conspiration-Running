@@ -1,7 +1,10 @@
 package entities;
 
 import java.awt.Graphics;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
+
+import world.Camera;
 
 public class Entity {
 	
@@ -61,11 +64,17 @@ public class Entity {
 	}
 
 	public void render(Graphics graphics) {
-		graphics.drawImage(this.bufferedImage, this.getX(), this.getY(), null);
+		graphics.drawImage(this.bufferedImage, this.getX() - Camera.x, this.getY() - Camera.y, null);
 	}
 	
 	public void tick() {
 		
+	}
+
+	public static boolean isColidding(Entity player, Entity atual) {
+		Rectangle r1 = new Rectangle(player.getX(), player.getY(), player.getW(), player.getH());
+		Rectangle r2 = new Rectangle(atual.getX(), atual.getY(), atual.getW(), atual.getH());
+		return r1.intersects(r2);
 	}
 	
 }

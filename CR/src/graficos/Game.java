@@ -3,7 +3,9 @@ package graficos;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.image.BufferStrategy;
@@ -15,42 +17,66 @@ import javax.swing.JFrame;
 
 import entities.Entity;
 import entities.Player;
-import world.World;
+import entities.Tile;
+import texto.Perguntas;
+import world.World;	
 
 public class Game extends Canvas implements Runnable, KeyListener{
 	
 	public static JFrame frame;
 	
-	private final int WIDTH = 160;
-	private final int HEIGHT = 120;
-	private final int SCALE = 3;
+	public static final int WIDTH = 160;
+	public static final int HEIGHT = 120;
+	public static final int SCALE = 6;
+	
+	public static int cont = 0;
 	
 	private BufferedImage bufferedImage;
 	
 	private Thread thread;
 	private Boolean flag;
 	
-	private Spritesheet spritesheet;
+	public static Spritesheet spritesheet;
 	
 	public static World world;
 	
-	public List<Entity> entities;
-	private Player player;
+	public static List<Entity> entities;
+	public static Player player;
+	public static Tile [] bandeira;
+	
+	public static String estado = "MENU";
+	public Menu menu;
+	public Perguntas perguntas;
+	
+	public static Graphics graphics;
+
+	private boolean continuar;
+	
+	private int certo = 0;
 	
 	public Game() {
 		addKeyListener(this);
 		setPreferredSize(new Dimension(WIDTH * SCALE, HEIGHT * SCALE));
 		this.iniciarGame();
 		
-		world = new World("/map.png");
 		
 		bufferedImage = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
 		
 		entities = new ArrayList<Entity>();
 		spritesheet = new Spritesheet("/geison.png");
-		
-		player = new Player(0, 0, 16, 16, spritesheet.getSprite(0, 0, 16, 16));
+		world = new World("/fase1.png");
+		player = new Player(15, 100, 16, 16, spritesheet.getSprite(0, 0, 16, 16));
 		entities.add(player);
+		
+		bandeira = new Tile[3];
+		
+		for(int i = 0; i < 3; i++) {
+			bandeira[i] = new Tile(41 + 34 * i, i % 2 == 0 ? 15 : 85);
+			entities.add(bandeira[i]);
+		}
+		
+		menu = new Menu();
+		perguntas = new Perguntas();
 	}
 	
 	public void iniciarGame() {
@@ -96,7 +122,6 @@ public class Game extends Canvas implements Runnable, KeyListener{
 			}
 			
 			if(System.currentTimeMillis() - timer >= 1000) {
-				System.out.println("FPS: " + frames);
 				frames = 0;
 				timer += 1000;
 			}
@@ -119,16 +144,11 @@ public class Game extends Canvas implements Runnable, KeyListener{
 			createBufferStrategy(3);
 			return;
 		}
-		Graphics graphics = bufferedImage.getGraphics();
+		graphics = bufferedImage.getGraphics();
 		graphics.setColor(new Color(19,19,19 ));
 		graphics.fillRect(0, 0, WIDTH, HEIGHT); //desenha um retangulo
 		
-		//mensagem
-		/*graphics.setFont(new Font("Arial", Font.BOLD, 12));
-		graphics.setColor(Color.WHITE);
-		graphics.drawString("Conspiration Running", 19, 19);*/
-		
-		//graphics.drawImage(player, 20, 40, null); //, dy2, sx1, sy1, sx2, sy2, observer)
+		world.render(graphics);
 		
 		////////////////////////
 		
@@ -144,25 +164,69 @@ public class Game extends Canvas implements Runnable, KeyListener{
 		graphics.dispose(); //limpar dados melhora performace
 		graphics = bufferStrategy.getDrawGraphics();
 		graphics.drawImage(bufferedImage, 0, 0, WIDTH * SCALE, HEIGHT * SCALE, null);
+		
+		if(player.getX() > 150 && player.getY() > 95) {
+			this.estado = "FIM";
+		}
+		
+		if(this.estado == "MENU") {
+			menu.render(graphics);
+		}else if(this.estado == "PERGUNTA") {
+			perguntas.renderPergunta1(graphics);
+		}else if(this.estado == "FIM") {
+			this.fim();
+		}
+		
 		bufferStrategy.show();
 	}
 	
+	private void fim() {
+		
+		Graphics2D graphics2d = (Graphics2D) graphics;
+		graphics2d.setColor(new Color(0, 0, 0, 190));
+		graphics2d.fillRect(0, 0, WIDTH * SCALE, HEIGHT * SCALE);
+		
+		graphics.setColor(Color.white);
+		
+		graphics.setFont(new Font("arial", Font.BOLD, 25));
+		graphics.drawString("Repostas certas: " + certo, 200, 190);
+		
+	}
+
 	private void tick() {
-		for(int i = 0; i < entities.size(); i++) {
-			Entity entity = entities.get(i);
-			entity.tick();
+		if(player.pergunta) {
+			this.estado = "PERGUNTA";
+		}
+		if(this.estado == "RODANDO") {
+			for(int i = 0; i < entities.size(); i++) {
+				Entity entity = entities.get(i);
+				entity.tick();
+				if(this.estado != "RODANDO") break;
+			}
+		}
+		if(this.estado == "MENU") {
+			menu.tick();
+			if(this.continuar)
+				this.estado = "RODANDO";
+		}
+		if(this.estado == "PERGUNTA") {
+			perguntas.tick();
+			if(this.player.um || this.player.dois || this.player.tres || this.player.quatro) {
+				if(this.player.um) {
+					certo++;
+				}
+				this.estado = "RODANDO";
+				this.continuar = false;
+				player.pergunta = false;
+			}
 		}
 	}
 
 	private void update() {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public void keyTyped(KeyEvent e) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
@@ -192,6 +256,21 @@ public class Game extends Canvas implements Runnable, KeyListener{
 			break;
 		case KeyEvent.VK_S:
 			this.player.down = true;
+			break;
+		case KeyEvent.VK_E:
+			this.continuar = true;
+			break;
+		case KeyEvent.VK_1:
+			this.player.um = true;
+			break;
+		case KeyEvent.VK_2:
+			this.player.dois = true;
+			break;
+		case KeyEvent.VK_3:
+			this.player.tres = true;
+			break;
+		case KeyEvent.VK_4:
+			this.player.quatro = true;
 			break;
 		default:
 			throw new IllegalArgumentException("Unexpected value: " + action);
@@ -226,16 +305,23 @@ public class Game extends Canvas implements Runnable, KeyListener{
 		case KeyEvent.VK_S:
 			this.player.down = false;
 			break;
+		case KeyEvent.VK_E:
+			this.continuar = false;
+			break;
+		case KeyEvent.VK_1:
+			this.player.um = false;
+			break;
+		case KeyEvent.VK_2:
+			this.player.dois = false;
+			break;
+		case KeyEvent.VK_3:
+			this.player.tres = false;
+			break;
+		case KeyEvent.VK_4:
+			this.player.quatro = false;
+			break;
 		default:
 			throw new IllegalArgumentException("Unexpected value: " + action);
 		}
 	}
 }
-
-
-
-
-
-
-
-
