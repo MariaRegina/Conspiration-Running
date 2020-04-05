@@ -22,8 +22,11 @@ public class Historia {
 		
 		graphics.setColor(Color.white);
 		
+		graphics.setFont(new Font("arial", Font.BOLD, 18));
+		graphics.drawString(constantes.equipe, 40, 50);
+		
 		graphics.setFont(new Font("arial", Font.BOLD, 30));
-		graphics.drawString(constantes.titulo, 80, 100);
+		graphics.drawString(constantes.titulo, 300, 100);
 		
 		graphics.setFont(new Font("arial", Font.BOLD, 20));
 		graphics.drawString(constantes.inicioHistoria.get(0), 80, 250);

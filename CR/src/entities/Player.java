@@ -76,9 +76,7 @@ public class Player extends Entity{
 			if(Entity.isColidding(this, atual)) {
 				Game.entities.remove(atual);
 				Game.cont++;
-				if(Game.cont == 1) {
-					pergunta = true;
-				}
+				pergunta = true;
 			}
 		}
 	}

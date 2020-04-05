@@ -18,6 +18,7 @@ import javax.swing.JFrame;
 import entities.Entity;
 import entities.Player;
 import entities.Tile;
+import texto.Constantes;
 import texto.Perguntas;
 import world.World;	
 
@@ -165,14 +166,14 @@ public class Game extends Canvas implements Runnable, KeyListener{
 		graphics = bufferStrategy.getDrawGraphics();
 		graphics.drawImage(bufferedImage, 0, 0, WIDTH * SCALE, HEIGHT * SCALE, null);
 		
-		if(player.getX() > 150 && player.getY() > 95) {
+		if(player.getX() > 150 && player.getY() > 80) {
 			this.estado = "FIM";
 		}
 		
 		if(this.estado == "MENU") {
 			menu.render(graphics);
 		}else if(this.estado == "PERGUNTA") {
-			perguntas.renderPergunta1(graphics);
+			perguntas.render(graphics, Game.cont);
 		}else if(this.estado == "FIM") {
 			this.fim();
 		}
@@ -188,8 +189,13 @@ public class Game extends Canvas implements Runnable, KeyListener{
 		
 		graphics.setColor(Color.white);
 		
-		graphics.setFont(new Font("arial", Font.BOLD, 25));
-		graphics.drawString("Repostas certas: " + certo, 200, 190);
+		graphics.setFont(new Font("arial", Font.BOLD, 20));
+		graphics.drawString("Repostas certas: " + certo, 150, 100);
+		
+		graphics.setFont(new Font("arial", Font.BOLD, 30));
+		graphics.drawString(Constantes.fimFase1.get(0), 100, 190);
+		graphics.drawString(Constantes.fimFase1.get(1), 100, 230);
+		graphics.drawString(Constantes.fimFase1.get(2), 100, 270);
 		
 	}
 
@@ -210,9 +216,12 @@ public class Game extends Canvas implements Runnable, KeyListener{
 				this.estado = "RODANDO";
 		}
 		if(this.estado == "PERGUNTA") {
-			perguntas.tick();
 			if(this.player.um || this.player.dois || this.player.tres || this.player.quatro) {
-				if(this.player.um) {
+				if(this.player.um && Game.cont == 1) {
+					certo++;
+				}else if(this.player.dois && Game.cont == 2) {
+					certo++;
+				}else if(this.player.tres && Game.cont == 3) {
 					certo++;
 				}
 				this.estado = "RODANDO";
